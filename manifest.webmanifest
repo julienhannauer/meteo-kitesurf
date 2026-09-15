@@ -2,6 +2,7 @@
   "name": "Météo & Kitesurf",
   "short_name": "Météo & Kite",
   "description": "Tableau de bord météo et kitesurf pour Montpellier, Port Camargue, Leucate et le Pont Levis.",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -10,16 +11,16 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "./icon-kite-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "./icon-kite-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
