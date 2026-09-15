@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a7784" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Météo & Kitesurf" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icon-180.png" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2212%22%20fill%3D%22%23e8f6f7%22/%3E%0A%20%20%3Cpath%20d%3D%22M10%2020%20Q32%206%2054%2020%22%20fill%3D%22none%22%20stroke%3D%22%230a7784%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Cpath%20d%3D%22M29%2020%20L35%2020%20L33%2035%20L31%2035%20Z%22%20fill%3D%22%230a7784%22/%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2240%22%20r%3D%224%22%20fill%3D%22%2318232d%22/%3E%0A%20%20%3Cpath%20d%3D%22M31%2044%20L24%2052%22%20stroke%3D%22%2318232d%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Cpath%20d%3D%22M33%2044%20L41%2050%22%20stroke%3D%22%2318232d%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Cpath%20d%3D%22M18%2053%20Q32%2047%2046%2053%22%20fill%3D%22none%22%20stroke%3D%22%23087e8b%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Cpath%20d%3D%22M14%2056%20Q24%2050%2034%2056%22%20fill%3D%22none%22%20stroke%3D%22%234bb5c1%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22/%3E%0A%3C/svg%3E" />
+  <title>Météo &amp; Kitesurf</title>
+  <style>
+    :root {
+      --bg: #f3f6f8;
+      --card: #ffffff;
+      --text: #18232d;
+      --muted: #667785;
+      --line: #dbe4ea;
+      --accent: #087e8b;
+      --accent-dark: #05646e;
+      --shadow: 0 8px 24px rgba(25, 48, 64, 0.08);
+      --radius: 16px;
+      --section-bg: #eaf2f4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: linear-gradient(135deg, #0a7784, #1599a6);
+      color: white;
+      padding: 28px 20px;
+    }
+
+    .header-inner,
+    main {
+      width: min(1500px, calc(100% - 28px));
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.55rem, 2.5vw, 2.25rem);
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+
+    main {
+      padding: 24px 0 36px;
+      display: grid;
+      gap: 30px;
+    }
+
+    /* Chaque lieu est regroupé dans un panneau distinct pour mieux séparer
+       visuellement Montpellier, Port Camargue et Leucate. */
+    .spot-section {
+      display: grid;
+      gap: 18px;
+      scroll-margin-top: 16px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.48);
+      border: 1px solid #d8e3e8;
+      border-radius: 20px;
+      box-shadow: 0 5px 18px rgba(25, 48, 64, 0.045);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      min-height: 46px;
+      padding: 9px 14px;
+      background: #e8f4f6;
+      border-left: 5px solid var(--accent);
+      border-radius: 11px;
+    }
+
+    .section-title h2 {
+      font-size: 1.25rem;
+      color: #123741;
+    }
+
+    .section-subtitle {
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .placeholder {
+      padding: 28px 20px;
+      text-align: center;
+      color: var(--muted);
+      background: linear-gradient(180deg, #fff, #f8fbfc);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 15px 17px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .icon {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #e8f6f7;
+      font-size: 19px;
+      flex: 0 0 auto;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.03rem;
+      font-weight: 720;
+    }
+
+    .hint {
+      margin-top: 2px;
+      font-size: 0.79rem;
+      color: var(--muted);
+    }
+
+    .open-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      padding: 8px 12px;
+      border-radius: 9px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 650;
+      transition: background .15s ease, transform .15s ease;
+    }
+
+    .open-link:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .frame-wrap {
+      background: #eef3f5;
+      position: relative;
+    }
+
+    iframe {
+      width: 100%;
+      display: block;
+      border: 0;
+      background: white;
+    }
+
+    .montpellier-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.34fr) minmax(0, 0.66fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .montpellier-grid > .card {
+      min-width: 0;
+    }
+
+    .meteo-france {
+      align-self: start;
+    }
+
+    .meteo-france iframe {
+      height: 150px;
+      background: white;
+    }
+
+    .meteo-france .frame-wrap {
+      background: white;
+    }
+
+    .meteo-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 13px 13px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .meteo-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--accent-dark);
+      background: #f8fbfc;
+      text-decoration: none;
+      font-size: 0.76rem;
+      font-weight: 650;
+    }
+
+    .openmeteo-body {
+      padding: 12px;
+      background: #fff;
+      min-height: 318px;
+    }
+
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .forecast-day {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 9px 8px;
+      background: #f8fbfc;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .forecast-day.today {
+      border-color: #83cbd2;
+      background: #edf9fa;
+    }
+
+    .forecast-date {
+      font-size: .72rem;
+      font-weight: 750;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .forecast-icon {
+      font-size: 1.55rem;
+      line-height: 1.15;
+      margin: 4px 0 3px;
+    }
+
+    .forecast-temp {
+      font-size: .82rem;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .forecast-temp .min {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .forecast-meta {
+      margin-top: 4px;
+      font-size: .67rem;
+      color: var(--muted);
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .forecast-status {
+      display: grid;
+      place-items: center;
+      min-height: 280px;
+      color: var(--muted);
+      font-size: .86rem;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .windguru .windguru-scroll {
+      width: 100%;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      background: #ffffff;
+    }
+
+    .windguru iframe {
+      height: 315px;
+      width: 100%;
+      min-width: 0;
+      display: block;
+      border: 0;
+      background: white;
+    }
+
+    .two-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    /* Les deux cartes du bas gardent exactement la même géométrie. */
+    .two-columns > .card {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Même format d'affichage pour l'anémomètre et la webcam. */
+    .live-view {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      height: auto;
+      flex: 0 0 auto;
+      overflow: hidden;
+    }
+
+    .webcam iframe {
+      width: 100%;
+      height: 100%;
+    }
+
+    .leucate-webcam {
+      aspect-ratio: 16 / 9;
+      background: #fff;
+    }
+
+    /*
+      La console WXSwitch est affichée dans un viewport virtuel 1024×768,
+      puis réduite pour tenir dans la carte. Cela revient à dézoomer la page
+      externe sans recadrer son contenu.
+    */
+    .anemo-crop {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+
+    .anemo .anemo-crop {
+      background: #ffffff;
+    }
+
+    .anemo-crop iframe {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1024px !important;
+      height: 768px;
+      max-width: none;
+      transform-origin: top left;
+      border: 0;
+      background: white;
+    }
+
+
+    .windy-map iframe {
+      height: 560px;
+    }
+
+    @media (max-width: 900px) {
+      .windy-map iframe { height: 480px; }
+    }
+
+    @media (max-width: 560px) {
+      .windy-map iframe { height: 420px; }
+    }
+
+    footer {
+      text-align: center;
+      padding: 0 20px 24px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 1050px) {
+      .forecast-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 900px) {
+      .two-columns,
+      .montpellier-grid { grid-template-columns: 1fr; }
+      .meteo-france iframe { height: 150px; }
+      .forecast-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .windguru iframe { height: 320px; }
+    }
+
+    @media (max-width: 680px) {
+      .forecast-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      header { padding: 22px 14px; }
+      .header-inner,
+      main { width: min(100% - 18px, 1500px); }
+      main { padding-top: 14px; gap: 18px; }
+      .spot-section { padding: 10px; gap: 12px; border-radius: 15px; }
+      .section-title { min-height: 40px; padding: 7px 11px; }
+      .card-head { padding: 12px; }
+      .hint { display: none; }
+      .meteo-france iframe { height: 150px; }
+      .forecast-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .windguru .windguru-scroll {
+        overflow: hidden;
+      }
+      .windguru iframe {
+        width: 100%;
+        max-width: 100%;
+        height: 250px;
+      }
+    }
+
+    /* Mode compact sur grand écran : reproduit environ un zoom navigateur à 80 %
+       sans demander de modifier le zoom du navigateur. */
+    @media (min-width: 1100px) {
+      body {
+        zoom: 0.82;
+      }
+    }
+
+    /* Repli pour les navigateurs qui ne gèrent pas CSS zoom. */
+    @supports not (zoom: 1) {
+      @media (min-width: 1100px) {
+        body {
+          transform: scale(0.82);
+          transform-origin: top left;
+          width: 121.9512%;
+        }
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>Météo & Kitesurf</h1>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="spot-section" id="montpellier">
+      <div class="section-title">
+        <h2>Montpellier</h2>
+      </div>
+
+      <div class="montpellier-grid">
+        <section class="card meteo-france">
+          <div class="card-head">
+            <div class="card-title">
+              <div class="icon">🇫🇷</div>
+              <div>
+                <h2>Météo-France</h2>
+              </div>
+            </div>
+            <a class="open-link"
+               href="https://meteofrance.com/previsions-meteo-france/montpellier/34000"
+               target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+          </div>
+          <div class="frame-wrap">
+            <iframe
+              title="Widget météo Montpellier – Météo-France"
+              loading="lazy"
+              scrolling="no"
+              src="https://meteofrance.com/widget/prevision/341720">
+            </iframe>
+          </div>
+          <div class="meteo-actions">
+            <a class="meteo-action" href="https://meteofrance.com/previsions-meteo-france/montpellier/34000" target="_blank" rel="noopener noreferrer">Prévisions détaillées ↗</a>
+          </div>
+        </section>
+
+        <section class="card openmeteo">
+          <div class="card-head">
+            <div class="card-title">
+              <div class="icon">🗓️</div>
+              <div>
+                <h2>Prévisions à 10 jours</h2>
+              </div>
+            </div>
+            <a class="open-link" href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Source ↗</a>
+          </div>
+          <div class="openmeteo-body">
+            <div id="forecast15" class="forecast-status">Chargement des prévisions…</div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="spot-section" id="port-camargue">
+      <div class="section-title">
+        <h2>Port Camargue – Plage Sud</h2>
+      </div>
+
+      <section class="card windguru">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="icon">💨</div>
+            <div>
+              <h2>Prévisions Windguru</h2>
+            </div>
+          </div>
+          <a class="open-link" href="https://www.windguru.cz/48603" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+        </div>
+        <div class="frame-wrap windguru-scroll">
+          <iframe
+            title="Prévisions Windguru – Port Camargue Plage Sud"
+            loading="lazy"
+            data-wg-full="https://www.windguru.cz/widget-fcst-iframe.php?s=48603&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,CDC,APCP1s,RATING"
+            data-wg-mobile="https://www.windguru.cz/widget-fcst-iframe.php?s=48603&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,RATING"
+            src="https://www.windguru.cz/widget-fcst-iframe.php?s=48603&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,CDC,APCP1s,RATING">
+          </iframe>
+        </div>
+      </section>
+
+      <div class="two-columns">
+        <section class="card anemo">
+          <div class="card-head">
+            <div class="card-title">
+              <div class="icon">🧭</div>
+              <div>
+                <h2>Anémomètre</h2>
+              </div>
+            </div>
+            <a class="open-link" href="https://wxweb.wxswitch.com/wxwebhtml/wxconsole/index.html?5879db69-5a06-4716-8bb4-a2d0cbb7a535" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+          </div>
+          <div class="anemo-crop live-view" id="anemoCrop">
+            <iframe id="anemoFrame" title="Anémomètre – Plage Sud" loading="lazy" scrolling="no" src="https://wxweb.wxswitch.com/wxwebhtml/wxconsole/index.html?5879db69-5a06-4716-8bb4-a2d0cbb7a535"></iframe>
+          </div>
+        </section>
+
+        <section class="card webcam">
+          <div class="card-head">
+            <div class="card-title">
+              <div class="icon">📷</div>
+              <div>
+                <h2>Webcam Plage</h2>
+              </div>
+            </div>
+            <a class="open-link" href="https://grauduroi.roundshot.com/plage/#/" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+          </div>
+          <div class="frame-wrap live-view">
+            <iframe title="Webcam Plage – Le Grau-du-Roi" loading="lazy" allow="fullscreen" src="https://grauduroi.roundshot.com/plage/#/"></iframe>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="spot-section" id="leucate">
+      <div class="section-title">
+        <h2>Leucate</h2>
+      </div>
+
+      <section class="card windguru">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="icon">💨</div>
+            <div>
+              <h2>Windguru – La Franqui / Les Coussoules</h2>
+            </div>
+          </div>
+          <a class="open-link" href="https://www.windguru.cz/48586" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+        </div>
+        <div class="frame-wrap windguru-scroll">
+          <iframe
+            title="Prévisions Windguru – La Franqui Les Coussoules"
+            loading="lazy"
+            data-wg-full="https://www.windguru.cz/widget-fcst-iframe.php?s=48586&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,CDC,APCP1s,RATING"
+            data-wg-mobile="https://www.windguru.cz/widget-fcst-iframe.php?s=48586&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,RATING"
+            src="https://www.windguru.cz/widget-fcst-iframe.php?s=48586&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,CDC,APCP1s,RATING">
+          </iframe>
+        </div>
+      </section>
+
+      <section class="card windguru">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="icon">💨</div>
+            <div>
+              <h2>Windguru – Le Goulet / Étang de Leucate</h2>
+            </div>
+          </div>
+          <a class="open-link" href="https://www.windguru.cz/500989" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+        </div>
+        <div class="frame-wrap windguru-scroll">
+          <iframe
+            title="Prévisions Windguru – Le Goulet Étang de Leucate"
+            loading="lazy"
+            data-wg-full="https://www.windguru.cz/widget-fcst-iframe.php?s=500989&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,CDC,APCP1s,RATING"
+            data-wg-mobile="https://www.windguru.cz/widget-fcst-iframe.php?s=500989&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,RATING"
+            src="https://www.windguru.cz/widget-fcst-iframe.php?s=500989&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,CDC,APCP1s,RATING">
+          </iframe>
+        </div>
+      </section>
+
+      <div class="two-columns">
+        <section class="card webcam">
+          <div class="card-head">
+            <div class="card-title">
+              <div class="icon">📷</div>
+              <div>
+                <h2>Webcam La Franqui 1</h2>
+              </div>
+            </div>
+            <a class="open-link" href="https://pv.viewsurf.com/894/Leucate-La-Franqui?i=NzczODp1bmRlZmluZWQ" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+          </div>
+          <div class="frame-wrap live-view leucate-webcam">
+            <iframe
+              title="Webcam Leucate La Franqui 1"
+              loading="lazy"
+              allow="fullscreen"
+              src="https://pv.viewsurf.com/894/Leucate-La-Franqui?i=NzczODp1bmRlZmluZWQ">
+            </iframe>
+          </div>
+        </section>
+
+        <section class="card webcam">
+          <div class="card-head">
+            <div class="card-title">
+              <div class="icon">📷</div>
+              <div>
+                <h2>Webcam La Franqui 2</h2>
+              </div>
+            </div>
+            <a class="open-link" href="https://pv.viewsurf.com/894/Leucate-La-Franqui?i=NzczMDp1bmRlZmluZWQ" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+          </div>
+          <div class="frame-wrap live-view leucate-webcam">
+            <iframe
+              title="Webcam Leucate La Franqui 2"
+              loading="lazy"
+              allow="fullscreen"
+              src="https://pv.viewsurf.com/894/Leucate-La-Franqui?i=NzczMDp1bmRlZmluZWQ">
+            </iframe>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="spot-section" id="pont-levis">
+      <div class="section-title">
+        <h2>Pont Levis – Sète</h2>
+      </div>
+
+      <section class="card windguru">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="icon">💨</div>
+            <div>
+              <h2>Windguru – Sète / Pont Levis</h2>
+            </div>
+          </div>
+          <a class="open-link" href="https://www.windguru.cz/837753" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+        </div>
+        <div class="frame-wrap windguru-scroll">
+          <iframe
+            title="Prévisions Windguru – Sète Pont Levis"
+            loading="lazy"
+            data-wg-full="https://www.windguru.cz/widget-fcst-iframe.php?s=837753&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,CDC,APCP1s,RATING"
+            data-wg-mobile="https://www.windguru.cz/widget-fcst-iframe.php?s=837753&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,RATING"
+            src="https://www.windguru.cz/widget-fcst-iframe.php?s=837753&wj=kn&tj=c&waj=m&odh=0&doh=24&fhours=240&hrsm=2&vt=forecasts&lng=fr&p=WINDSPD,GUST,SMER,TMPE,CDC,APCP1s,RATING">
+          </iframe>
+        </div>
+      </section>
+    </section>
+
+    <section class="spot-section" id="windy">
+      <div class="section-title">
+        <h2>Windy</h2>
+      </div>
+
+      <section class="card windy-map">
+        <div class="card-head">
+          <div class="card-title">
+            <div class="icon">🌬️</div>
+            <div>
+              <h2>Carte des vents – Leucate à Port Camargue</h2>
+            </div>
+          </div>
+          <a class="open-link" href="https://www.windy.com/?43.215,3.585,9" target="_blank" rel="noopener noreferrer">Ouvrir ↗</a>
+        </div>
+        <div class="frame-wrap">
+          <iframe
+            title="Windy – zone Leucate à Port Camargue"
+            loading="lazy"
+            allowfullscreen
+            src="https://embed.windy.com/embed2.html?lat=43.215&lon=3.585&detailLat=43.215&detailLon=3.585&width=1200&height=560&zoom=9&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1">
+          </iframe>
+        </div>
+      </section>
+    </section>
+
+  </main>
+
+  <footer>
+    Tableau de bord personnel météo & kitesurf · Montpellier · Port Camargue · Leucate · Pont Levis
+  </footer>
+
+  <script>
+    const weatherIcons = {
+      0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
+      45: '🌫️', 48: '🌫️',
+      51: '🌦️', 53: '🌦️', 55: '🌧️',
+      56: '🌧️', 57: '🌧️',
+      61: '🌦️', 63: '🌧️', 65: '🌧️',
+      66: '🌧️', 67: '🌧️',
+      71: '🌨️', 73: '🌨️', 75: '❄️', 77: '❄️',
+      80: '🌦️', 81: '🌧️', 82: '⛈️',
+      85: '🌨️', 86: '❄️',
+      95: '⛈️', 96: '⛈️', 99: '⛈️'
+    };
+
+    async function loadOpenMeteo15Days() {
+      const target = document.getElementById('forecast15');
+      if (!target) return;
+
+      const url = 'https://api.open-meteo.com/v1/forecast?latitude=43.6109&longitude=3.8767&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=Europe%2FParis&forecast_days=10';
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        const d = data.daily;
+        const today = new Date().toISOString().slice(0, 10);
+
+        const cards = d.time.map((date, i) => {
+          const dt = new Date(date + 'T12:00:00');
+          const day = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' }).format(dt).replace('.', '');
+          const dateLabel = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' }).format(dt);
+          const icon = weatherIcons[d.weather_code[i]] || '🌤️';
+          const rain = Math.round(d.precipitation_probability_max[i] ?? 0);
+          const wind = Math.round(d.wind_speed_10m_max[i] ?? 0);
+          const max = Math.round(d.temperature_2m_max[i]);
+          const min = Math.round(d.temperature_2m_min[i]);
+          return `
+            <div class="forecast-day ${date === today ? 'today' : ''}">
+              <div class="forecast-date">${day} ${dateLabel}</div>
+              <div class="forecast-icon" aria-hidden="true">${icon}</div>
+              <div class="forecast-temp">${max}° <span class="min">/ ${min}°</span></div>
+              <div class="forecast-meta">💧 ${rain}% · 💨 ${wind} km/h</div>
+            </div>`;
+        }).join('');
+
+        target.className = 'forecast-grid';
+        target.innerHTML = cards;
+      } catch (error) {
+        target.className = 'forecast-status';
+        target.innerHTML = 'Prévisions Open-Meteo indisponibles.<br>Recharge la page pour réessayer.';
+      }
+    }
+
+
+
+    function adaptWindguruForScreen() {
+      const mobile = window.matchMedia('(max-width: 560px)').matches;
+      document.querySelectorAll('.windguru iframe[data-wg-full]').forEach((frame) => {
+        const desired = mobile ? frame.dataset.wgMobile : frame.dataset.wgFull;
+        if (desired && frame.src !== desired) frame.src = desired;
+      });
+    }
+
+    // Dézoom + centrage de la console WXSwitch dans sa carte.
+    // Une petite marge (4 %) évite qu'elle soit collée aux bords.
+    function fitAnemometerScreen() {
+      const crop = document.getElementById('anemoCrop');
+      const frame = document.getElementById('anemoFrame');
+      if (!crop || !frame) return;
+
+      const referenceWidth = 1024;
+      const referenceHeight = 768;
+      const marginFactor = 0.96;
+      const scale = Math.min(
+        crop.clientWidth / referenceWidth,
+        crop.clientHeight / referenceHeight
+      ) * marginFactor;
+
+      const renderedWidth = referenceWidth * scale;
+      const renderedHeight = referenceHeight * scale;
+
+      // Le contenu utile de WXSwitch n'est pas parfaitement centré dans son
+      // viewport natif : on applique donc une légère correction vers la droite
+      // pour centrer visuellement la console dans la carte.
+      const horizontalCorrection = crop.clientWidth * 0.075;
+
+      frame.style.transform = `scale(${scale})`;
+      frame.style.left = `${(crop.clientWidth - renderedWidth) / 2 + horizontalCorrection}px`;
+      frame.style.top = `${(crop.clientHeight - renderedHeight) / 2}px`;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      fitAnemometerScreen();
+      loadOpenMeteo15Days();
+      adaptWindguruForScreen();
+    });
+    window.addEventListener('resize', () => {
+      fitAnemometerScreen();
+      adaptWindguruForScreen();
+    });
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+
+</body>
+</html>
